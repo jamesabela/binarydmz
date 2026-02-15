@@ -303,29 +303,29 @@ export default class Game extends Phaser.Scene {
             }
         }
 
-        let yPos = 50;
+        let yPos = 60; // Start lower to clear top border
 
         // 2. Headings
         doc.setTextColor(0, 150, 0); // Darker Neon Green for readability
         doc.setFont("helvetica", "bold");
 
-        doc.setFontSize(36);
+        doc.setFontSize(32); // Slightly smaller
         doc.text("BINARY DMZ", width / 2, yPos, { align: 'center' });
-        yPos += 15;
+        yPos += 12;
 
-        doc.setFontSize(22);
+        doc.setFontSize(20); // Slightly smaller
         doc.text("MISSION COMPLETION CERTIFICATE", width / 2, yPos, { align: 'center' });
-        yPos += 30;
+        yPos += 25;
 
         // 3. Pilot Info
-        doc.setTextColor(0, 0, 0); // BLACK for maximum contrast
-        doc.setFontSize(28);
+        doc.setTextColor(0, 0, 0); // BLACK
+        doc.setFontSize(26);
         doc.text(`Pilot: ${this.playerName}`, width / 2, yPos, { align: 'center' });
-        yPos += 25;
+        yPos += 20;
 
         // 4. Consolidated Stats (Dark Grey)
         doc.setTextColor(40, 40, 40);
-        doc.setFontSize(18);
+        doc.setFontSize(16);
 
         const stats = [
             `Date: ${date}`,
@@ -335,16 +335,17 @@ export default class Game extends Phaser.Scene {
 
         stats.forEach(line => {
             doc.text(line, width / 2, yPos, { align: 'center' });
-            yPos += 12;
+            yPos += 10;
         });
 
-        // 5. New Record
-        if (this.score >= this.highScore && this.score > 0) {
-            yPos += 15;
-            doc.setTextColor(200, 0, 0); // Dark Red for attention
-            doc.setFontSize(24);
-            doc.text("NEW RECORD ESTABLISHED!", width / 2, yPos, { align: 'center' });
-        }
+        // 6. Footer (New Record text removed)
+
+        // 7. Game URL (Positioned relative to stats to keep it compact)
+        yPos += 15;
+        doc.setTextColor(0, 255, 255); // Cyan
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("Play at: https://jamesabela.github.io/binarydmz/", width / 2, yPos, { align: 'center' });
 
         doc.save(`BinaryDMZ_Certificate_${this.playerName}.pdf`);
     }
