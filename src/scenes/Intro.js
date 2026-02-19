@@ -11,88 +11,80 @@ export default class Intro extends Phaser.Scene {
         const scale = this.scale.width / this.introImage.width;
         this.introImage.setScale(scale);
 
-        // Create a container for the play button
-        const playButton = this.add.container(this.scale.width / 2, this.scale.height / 2);
+        // Create Watch Video Button
+        const videoButton = this.add.container(this.scale.width / 2 - 120, this.scale.height - 100);
 
-        // Play button background (semi-transparent circle)
-        const playBg = this.add.graphics();
-        playBg.fillStyle(0x000000, 0.5);
-        playBg.fillCircle(0, 0, 50);
-        playButton.add(playBg);
+        const videoBg = this.add.graphics();
+        videoBg.fillStyle(0xFF0000, 1); // Red for YouTube
+        videoBg.fillRoundedRect(-100, -30, 200, 60, 15);
+        videoButton.add(videoBg);
 
-        // Play button arrow (white triangle)
-        const playArrow = this.add.graphics();
-        playArrow.fillStyle(0xffffff, 1);
-        playArrow.beginPath();
-        playArrow.moveTo(-15, -25);
-        playArrow.lineTo(25, 0);
-        playArrow.lineTo(-15, 25);
-        playArrow.closePath();
-        playArrow.fillPath();
-        playButton.add(playArrow);
+        const videoText = this.add.text(0, 0, 'WATCH VIDEO', {
+            fontSize: '24px',
+            fill: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        videoButton.add(videoText);
 
-        // Make the container interactive
-        playButton.setSize(100, 100);
-        playButton.setInteractive({ useHandCursor: true });
+        videoButton.setSize(200, 60);
+        videoButton.setInteractive({ useHandCursor: true });
 
-        // Add hover effect
-        playButton.on('pointerover', () => {
-            playBg.clear();
-            playBg.fillStyle(0x000000, 0.7);
-            playBg.fillCircle(0, 0, 50);
-            playArrow.clear();
-            playArrow.fillStyle(0xffff00, 1); // Turn yellow on hover
-            playArrow.beginPath();
-            playArrow.moveTo(-15, -25);
-            playArrow.lineTo(25, 0);
-            playArrow.lineTo(-15, 25);
-            playArrow.closePath();
-            playArrow.fillPath();
-        });
-
-        playButton.on('pointerout', () => {
-            playBg.clear();
-            playBg.fillStyle(0x000000, 0.5);
-            playBg.fillCircle(0, 0, 50);
-            playArrow.clear();
-            playArrow.fillStyle(0xffffff, 1);
-            playArrow.beginPath();
-            playArrow.moveTo(-15, -25);
-            playArrow.lineTo(25, 0);
-            playArrow.lineTo(-15, 25);
-            playArrow.closePath();
-            playArrow.fillPath();
-        });
-
-        // Click handler
-        playButton.on('pointerdown', (pointer, localX, localY, event) => {
-            event.stopPropagation(); // Prevent the scene click from triggering
+        videoButton.on('pointerdown', (pointer, localX, localY, event) => {
+            event.stopPropagation();
             window.open('https://www.youtube.com/shorts/wMZcatDovow', '_blank');
         });
 
-        // Make the whole screen clickable to advance (existing code, moved down)
-        // We modify the existing background click to be on the introImage instead, 
-        // OR we just keep the scene click but use stopPropagation on the button.
-        // The previous code had: this.input.on('pointerdown', ...) which catches all scene clicks.
-        // event.stopPropagation() on the game object should work if the scene input listener is set correctly.
+        // Hover effect for Video Button
+        videoButton.on('pointerover', () => {
+            videoBg.clear();
+            videoBg.fillStyle(0xCC0000, 1); // Darker Red
+            videoBg.fillRoundedRect(-100, -30, 200, 60, 15);
+        });
+        videoButton.on('pointerout', () => {
+            videoBg.clear();
+            videoBg.fillStyle(0xFF0000, 1);
+            videoBg.fillRoundedRect(-100, -30, 200, 60, 15);
+        });
 
-        // HOWEVER, Phaser's `this.input.on` is a global input listener for the scene. 
-        // Game object `pointerdown` events fire BEFORE the global scene `pointerdown`.
-        // But `stopPropagation` in Phaser works a bit differently. 
-        // Actually, if I make the background image interactive, I can handle clicks on it separately.
+        // Create Start Game Button
+        const gameButton = this.add.container(this.scale.width / 2 + 120, this.scale.height - 100);
 
-        // Let's make the background image interactive for the "continue" action, instead of the whole scene.
+        const gameBg = this.add.graphics();
+        gameBg.fillStyle(0x00AA00, 1); // Green for Go/Start
+        gameBg.fillRoundedRect(-100, -30, 200, 60, 15);
+        gameButton.add(gameBg);
+
+        const gameText = this.add.text(0, 0, 'START GAME', {
+            fontSize: '24px',
+            fill: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        gameButton.add(gameText);
+
+        gameButton.setSize(200, 60);
+        gameButton.setInteractive({ useHandCursor: true });
+
+        gameButton.on('pointerdown', (pointer, localX, localY, event) => {
+            event.stopPropagation();
+            this.scene.start('Menu');
+        });
+
+        // Hover effect for Game Button
+        gameButton.on('pointerover', () => {
+            gameBg.clear();
+            gameBg.fillStyle(0x008800, 1); // Darker Green
+            gameBg.fillRoundedRect(-100, -30, 200, 60, 15);
+        });
+        gameButton.on('pointerout', () => {
+            gameBg.clear();
+            gameBg.fillStyle(0x00AA00, 1);
+            gameBg.fillRoundedRect(-100, -30, 200, 60, 15);
+        });
+
+        // Make the background clickable to advance as a fallback, but remove conflicting text instruction at bottom
         this.introImage.setInteractive();
         this.introImage.on('pointerdown', () => {
             this.scene.start('Menu');
         });
-
-        // Add instructions text at the bottom
-        this.add.text(this.scale.width / 2, this.scale.height - 30, 'Click anywhere to continue...', {
-            fontSize: '18px',
-            fill: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setOrigin(0.5);
     }
 }
