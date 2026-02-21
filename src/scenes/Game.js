@@ -11,6 +11,22 @@ export default class Game extends Phaser.Scene {
 
     create() {
         this.score = 0;
+
+        // Music Setup
+        if (!this.sound.get('music')) {
+            this.music = this.sound.add('music', { loop: true, volume: 0.5 });
+        } else {
+            this.music = this.sound.get('music');
+        }
+
+        if (!this.registry.get('musicMuted') && !this.music.isPlaying) {
+            this.music.play();
+        }
+
+        this.isFirstRound = true;
+        this.tutorialElements = [];
+        this.hasPressedAnything = false;
+
         this.binaryCounter = 0;
         this.rects = [];
         this.bitValues = [128, 64, 32, 16, 8, 4, 2, 1];
@@ -47,9 +63,21 @@ export default class Game extends Phaser.Scene {
         // Game Logic Setup based on Difficulty
         this.setupDifficulty();
 
+        // Setup Keyboard Controls (Keys 1-8)
+        this.setupKeyboardControls();
+
         // Load High Score
         this.highScore = parseInt(localStorage.getItem(`highScore_${this.difficulty}_${this.mode}`)) || 0;
-        this.add.text(this.scale.width - 20, 20, 'Best: ' + this.highScore, { fontSize: '24px', fill: '#aaa' }).setOrigin(1, 0);
+        this.add.text(this.scale.width - 20, 20, 'Best ' + this.highScore, { fontSize: '24px', fill: '#aaa', backgroundColor: '#000000', padding: { x: 5, y: 5 } }).setOrigin(1, 0);
+
+        // Quit to Menu Button
+        this.add.text(this.scale.width - 20, 60, 'Quit to Menu', { fontSize: '20px', fill: '#ff0000', backgroundColor: '#330000', padding: { x: 5, y: 5 } })
+            .setOrigin(1, 0)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => {
+                if (this.music) this.music.stop();
+                this.scene.start('Menu');
+            });
 
         // Start Round
         this.startRound();
@@ -68,6 +96,25 @@ export default class Game extends Phaser.Scene {
         // Score
         this.add.text(20, 200, 'Score', textStyle);
         this.scoreText = this.add.text(20, 240, '0', textStyle);
+
+        // Music Toggle
+        const isMuted = this.registry.get('musicMuted') || false;
+        this.musicToggleText = this.add.text(20, 290, isMuted ? '🔇' : '🔊', { fontSize: '48px' })
+            .setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => this.toggleMusic());
+    }
+
+    toggleMusic() {
+        const isMuted = !this.registry.get('musicMuted');
+        this.registry.set('musicMuted', isMuted);
+
+        if (isMuted) {
+            this.music.stop();
+            this.musicToggleText.setText('🔇');
+        } else {
+            this.music.play();
+            this.musicToggleText.setText('🔊');
+        }
     }
 
     createBitRectangles() {
@@ -134,6 +181,9 @@ export default class Game extends Phaser.Scene {
     }
 
     toggleBit(index) {
+        this.hasPressedAnything = true;
+        this.clearTutorial();
+
         let bitObj = this.rects[index];
         if (this.rectFill[index] === 0) {
             this.rectFill[index] = bitObj.value;
@@ -154,7 +204,25 @@ export default class Game extends Phaser.Scene {
         this.binaryCounterText.setText(this.binaryCounter);
     }
 
+    setupKeyboardControls() {
+        // Map keys '1' through '8' (KeyCodes 49-56) to toggle bits
+        this.input.keyboard.on(`keydown-ONE`, () => this.toggleBit(0));
+        this.input.keyboard.on(`keydown-TWO`, () => this.toggleBit(1));
+        this.input.keyboard.on(`keydown-THREE`, () => this.toggleBit(2));
+        this.input.keyboard.on(`keydown-FOUR`, () => this.toggleBit(3));
+        this.input.keyboard.on(`keydown-FIVE`, () => this.toggleBit(4));
+        this.input.keyboard.on(`keydown-SIX`, () => this.toggleBit(5));
+        this.input.keyboard.on(`keydown-SEVEN`, () => this.toggleBit(6));
+        this.input.keyboard.on(`keydown-EIGHT`, () => this.toggleBit(7));
+
+        // Also add keyboard support to toggle music (M key)
+        this.input.keyboard.on('keydown-M', () => this.toggleMusic());
+    }
+
     startRound() {
+        this.hasPressedAnything = false;
+        this.clearTutorial();
+
         // Reset bits
         for (let i = 0; i < 8; i++) {
             this.rectFill[i] = 0;
@@ -203,11 +271,75 @@ export default class Game extends Phaser.Scene {
                 this.gameOver();
             }
         });
+
+        if (this.isFirstRound) {
+            this.time.delayedCall(this.shipSpeed / 2, () => {
+                if (!this.hasPressedAnything && this.isFirstRound) {
+                    this.showTutorial();
+                }
+            });
+        }
+    }
+
+    showTutorial() {
+        let remaining = this.matchTarget;
+        for (let i = 0; i < 8; i++) {
+            let bitVal = this.bitValues[i];
+            if (remaining >= bitVal) {
+                remaining -= bitVal;
+                let rectObj = this.rects[i].rect;
+
+                // Pulse Rectangle
+                let twInfo = this.tweens.add({
+                    targets: rectObj,
+                    scaleX: 1.2,
+                    scaleY: 1.2,
+                    yoyo: true,
+                    repeat: -1,
+                    duration: 400
+                });
+
+                // Bouncing Arrow
+                let arrowText = this.add.text(rectObj.x, rectObj.y - 70, '▼', { fontSize: '24px', fill: '#ffff00' }).setOrigin(0.5);
+                let textTw = this.tweens.add({
+                    targets: arrowText,
+                    y: rectObj.y - 60,
+                    yoyo: true,
+                    repeat: -1,
+                    duration: 400
+                });
+
+                this.tutorialElements.push({
+                    stop: () => {
+                        twInfo.stop();
+                        textTw.stop();
+                        arrowText.destroy();
+                    }
+                });
+            }
+        }
+    }
+
+    clearTutorial() {
+        if (this.tutorialElements && this.tutorialElements.length > 0) {
+            this.tutorialElements.forEach(el => el.stop());
+            this.tutorialElements = [];
+
+            // Re-normalize scales
+            this.rects.forEach(obj => {
+                obj.rect.setScale(1);
+            });
+        }
     }
 
     checkMatch() {
         if (this.binaryCounter === this.matchTarget) {
-            this.sound.play('success');
+            this.isFirstRound = false;
+            this.clearTutorial();
+
+            if (!this.registry.get('musicMuted')) {
+                this.sound.play('success');
+            }
             this.score += this.scoreLevel;
             this.scoreText.setText(this.score);
 
@@ -225,6 +357,8 @@ export default class Game extends Phaser.Scene {
     }
 
     gameOver() {
+        this.isFirstRound = false;
+        this.clearTutorial();
         this.spaceship.setVisible(false);
 
         // Explosions at laser line
@@ -254,8 +388,8 @@ export default class Game extends Phaser.Scene {
                 this.scene.start('Menu');
             });
 
-        // Download Report Button
-        const pdfBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 260, 'DOWNLOAD REPORT', {
+        // Download Certificate Button
+        const pdfBtn = this.add.text(this.scale.width / 2, this.scale.height / 2 + 260, 'DOWNLOAD CERTIFICATE', {
             fontSize: '32px',
             fill: '#fff',
             backgroundColor: '#0000aa',

@@ -31,7 +31,7 @@ export default class Intro extends Phaser.Scene {
 
         videoButton.on('pointerdown', (pointer, localX, localY, event) => {
             event.stopPropagation();
-            window.open('https://www.youtube.com/shorts/wMZcatDovow', '_blank');
+            window.open('https://www.youtube.com/watch?v=wMZcatDovow', '_blank');
         });
 
         // Hover effect for Video Button
@@ -81,10 +81,11 @@ export default class Intro extends Phaser.Scene {
             gameBg.fillRoundedRect(-100, -30, 200, 60, 15);
         });
 
-        // Make the background clickable to advance as a fallback, but remove conflicting text instruction at bottom
+        // Make the background clickable to advance as a fallback
         this.introImage.setInteractive();
         this.introImage.on('pointerdown', () => {
             this.scene.start('Menu');
         });
     }
 }
+

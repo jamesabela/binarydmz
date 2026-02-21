@@ -31,6 +31,7 @@ export default class Boot extends Phaser.Scene {
 
         // Load audio
         this.load.audio('success', 'assets/success.wav');
+        this.load.audio('music', 'assets/music.mp3');
     }
 
     create() {
